@@ -2,13 +2,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Upload } from "lucide-react";
 
 export default function VideoUpload() {
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
+  const { data: stream } = useQuery({
+    queryKey: ["/api/stream/status"],
+  });
 
   const mutation = useMutation({
     mutationFn: async (file: File) => {
@@ -85,6 +88,21 @@ export default function VideoUpload() {
       </div>
       {(mutation.isPending || progress > 0) && (
         <Progress value={progress} className="w-full" />
+      )}
+
+      {/* Show video preview if uploaded */}
+      {stream?.videoPath && (
+        <div className="mt-4">
+          <h3 className="text-sm font-medium mb-2">Uploaded Video Preview:</h3>
+          <video 
+            src={stream.videoPath}
+            controls
+            className="w-full rounded-lg border"
+            style={{ maxHeight: "240px" }}
+          >
+            Your browser does not support the video tag.
+          </video>
+        </div>
       )}
     </div>
   );

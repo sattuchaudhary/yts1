@@ -2,11 +2,24 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
-import { insertStreamSchema } from "@shared/schema";
+import path from "path";
+import express from "express";
 
-const upload = multer({ dest: "uploads/" });
+// Configure multer to store files with their original names
+const upload = multer({ 
+  dest: "uploads/",
+  storage: multer.diskStorage({
+    destination: "uploads/",
+    filename: (req, file, cb) => {
+      cb(null, file.originalname);
+    }
+  })
+});
 
 export function registerRoutes(app: Express): Server {
+  // Serve uploaded files statically
+  app.use("/uploads", express.static("uploads"));
+
   app.post("/api/stream/key", async (req, res) => {
     try {
       const { streamKey } = req.body;
@@ -23,8 +36,8 @@ export function registerRoutes(app: Express): Server {
       const stream = await storage.getCurrentStream();
       if (!stream) throw new Error("No stream configured");
 
-      // Update existing stream instead of creating new one
-      const updatedStream = await storage.updateStreamVideo(stream.id, req.file.path);
+      const videoPath = `/uploads/${req.file.filename}`;
+      const updatedStream = await storage.updateStreamVideo(stream.id, videoPath);
       res.json(updatedStream);
     } catch (error) {
       res.status(400).json({ error: "Failed to upload video" });
