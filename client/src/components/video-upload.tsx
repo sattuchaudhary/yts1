@@ -90,18 +90,13 @@ export default function VideoUpload() {
         <Progress value={progress} className="w-full" />
       )}
 
-      {/* Show video preview if uploaded */}
+      {/* Show uploaded video file name */}
       {stream?.videoPath && (
-        <div className="mt-4">
-          <h3 className="text-sm font-medium mb-2">Uploaded Video Preview:</h3>
-          <video 
-            src={stream.videoPath}
-            controls
-            className="w-full rounded-lg border"
-            style={{ maxHeight: "240px" }}
-          >
-            Your browser does not support the video tag.
-          </video>
+        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+          <h3 className="text-sm font-medium mb-2">Uploaded Video:</h3>
+          <p className="text-sm text-gray-600">
+            {stream.videoPath.split('/').pop()}
+          </p>
         </div>
       )}
     </div>
