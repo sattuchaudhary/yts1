@@ -1,4 +1,6 @@
 import { streams, type Stream, type InsertStream } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   createStream(stream: InsertStream): Promise<Stream>;
@@ -8,57 +10,52 @@ export interface IStorage {
   getCurrentStream(): Promise<Stream | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private streams: Map<number, Stream>;
-  private currentId: number;
-
-  constructor() {
-    this.streams = new Map();
-    this.currentId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async createStream(insertStream: InsertStream): Promise<Stream> {
-    const id = this.currentId++;
-    const stream: Stream = {
-      ...insertStream,
-      id,
-      isStreaming: false,
-      viewCount: 0,
-      startedAt: null,
-    };
-    this.streams.set(id, stream);
+    const [stream] = await db
+      .insert(streams)
+      .values(insertStream)
+      .returning();
     return stream;
   }
 
   async getStream(id: number): Promise<Stream | undefined> {
-    return this.streams.get(id);
+    const [stream] = await db
+      .select()
+      .from(streams)
+      .where(eq(streams.id, id));
+    return stream;
   }
 
   async updateStreamStatus(id: number, isStreaming: boolean): Promise<Stream> {
-    const stream = this.streams.get(id);
-    if (!stream) throw new Error("Stream not found");
-
-    const updatedStream = {
-      ...stream,
-      isStreaming,
-      startedAt: isStreaming ? new Date() : stream.startedAt,
-    };
-    this.streams.set(id, updatedStream);
-    return updatedStream;
+    const [stream] = await db
+      .update(streams)
+      .set({ 
+        isStreaming, 
+        startedAt: isStreaming ? new Date() : null 
+      })
+      .where(eq(streams.id, id))
+      .returning();
+    return stream;
   }
 
   async updateViewCount(id: number, viewCount: number): Promise<Stream> {
-    const stream = this.streams.get(id);
-    if (!stream) throw new Error("Stream not found");
-
-    const updatedStream = { ...stream, viewCount };
-    this.streams.set(id, updatedStream);
-    return updatedStream;
+    const [stream] = await db
+      .update(streams)
+      .set({ viewCount })
+      .where(eq(streams.id, id))
+      .returning();
+    return stream;
   }
 
   async getCurrentStream(): Promise<Stream | undefined> {
-    return Array.from(this.streams.values())[0];
+    const [stream] = await db
+      .select()
+      .from(streams)
+      .orderBy(streams.createdAt)
+      .limit(1);
+    return stream;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

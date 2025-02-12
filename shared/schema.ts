@@ -9,12 +9,18 @@ export const streams = pgTable("streams", {
   isStreaming: boolean("is_streaming").notNull().default(false),
   viewCount: integer("view_count").notNull().default(0),
   startedAt: timestamp("started_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  title: text("title"),
+  description: text("description"),
 });
 
-export const insertStreamSchema = createInsertSchema(streams).pick({
-  streamKey: true,
-  videoPath: true,
-});
+export const insertStreamSchema = createInsertSchema(streams)
+  .pick({
+    streamKey: true,
+    videoPath: true,
+    title: true,
+    description: true,
+  });
 
 export const streamKeySchema = z.object({
   streamKey: z.string().min(10, "Stream key must be at least 10 characters"),
