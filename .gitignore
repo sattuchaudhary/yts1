@@ -41,3 +41,6 @@ uploads/*
 # Vite
 vite.config.ts.*
 *.timestamp-*
+
+# Render specific
+.render-buildlog.json
