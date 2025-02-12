@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { streamingService } from "./streaming";
 import multer from "multer";
 import path from "path";
 import express from "express";
@@ -48,7 +49,9 @@ export function registerRoutes(app: Express): Server {
     try {
       const stream = await storage.getCurrentStream();
       if (!stream) throw new Error("No stream configured");
+      if (!stream.videoPath) throw new Error("No video uploaded");
 
+      streamingService.startStreaming(stream.videoPath, stream.streamKey);
       const updatedStream = await storage.updateStreamStatus(stream.id, true);
       res.json(updatedStream);
     } catch (error) {
@@ -61,6 +64,7 @@ export function registerRoutes(app: Express): Server {
       const stream = await storage.getCurrentStream();
       if (!stream) throw new Error("No stream configured");
 
+      streamingService.stopStreaming();
       const updatedStream = await storage.updateStreamStatus(stream.id, false);
       res.json(updatedStream);
     } catch (error) {
