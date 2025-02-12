@@ -27,6 +27,7 @@ export function registerRoutes(app: Express): Server {
       const stream = await storage.createStream({ streamKey, videoPath: "" });
       res.json(stream);
     } catch (error) {
+      console.error("Failed to set stream key:", error);
       res.status(400).json({ error: "Invalid stream key" });
     }
   });
@@ -41,6 +42,7 @@ export function registerRoutes(app: Express): Server {
       const updatedStream = await storage.updateStreamVideo(stream.id, videoPath);
       res.json(updatedStream);
     } catch (error) {
+      console.error("Failed to upload video:", error);
       res.status(400).json({ error: "Failed to upload video" });
     }
   });
@@ -55,6 +57,7 @@ export function registerRoutes(app: Express): Server {
       const updatedStream = await storage.updateStreamStatus(stream.id, true);
       res.json(updatedStream);
     } catch (error) {
+      console.error("Failed to start stream:", error);
       res.status(400).json({ error: "Failed to start stream" });
     }
   });
@@ -64,10 +67,20 @@ export function registerRoutes(app: Express): Server {
       const stream = await storage.getCurrentStream();
       if (!stream) throw new Error("No stream configured");
 
-      streamingService.stopStreaming();
+      // Force stop the stream if needed
+      streamingService.stopStreaming(true);
       const updatedStream = await storage.updateStreamStatus(stream.id, false);
       res.json(updatedStream);
     } catch (error) {
+      console.error("Failed to stop stream:", error);
+      // Still try to update the database even if stopping fails
+      try {
+        if (stream) {
+          await storage.updateStreamStatus(stream.id, false);
+        }
+      } catch (dbError) {
+        console.error("Failed to update stream status:", dbError);
+      }
       res.status(400).json({ error: "Failed to stop stream" });
     }
   });
@@ -77,6 +90,7 @@ export function registerRoutes(app: Express): Server {
       const stream = await storage.getCurrentStream();
       res.json(stream || null);
     } catch (error) {
+      console.error("Failed to get stream status:", error);
       res.status(400).json({ error: "Failed to get stream status" });
     }
   });
