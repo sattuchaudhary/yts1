@@ -23,10 +23,8 @@ export function registerRoutes(app: Express): Server {
       const stream = await storage.getCurrentStream();
       if (!stream) throw new Error("No stream configured");
 
-      const updatedStream = await storage.createStream({
-        streamKey: stream.streamKey,
-        videoPath: req.file.path,
-      });
+      // Update existing stream instead of creating new one
+      const updatedStream = await storage.updateStreamVideo(stream.id, req.file.path);
       res.json(updatedStream);
     } catch (error) {
       res.status(400).json({ error: "Failed to upload video" });

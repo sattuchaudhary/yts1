@@ -8,6 +8,7 @@ export interface IStorage {
   updateStreamStatus(id: number, isStreaming: boolean): Promise<Stream>;
   updateViewCount(id: number, viewCount: number): Promise<Stream>;
   getCurrentStream(): Promise<Stream | undefined>;
+  updateStreamVideo(id: number, videoPath: string): Promise<Stream>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -34,6 +35,15 @@ export class DatabaseStorage implements IStorage {
         isStreaming, 
         startedAt: isStreaming ? new Date() : null 
       })
+      .where(eq(streams.id, id))
+      .returning();
+    return stream;
+  }
+
+  async updateStreamVideo(id: number, videoPath: string): Promise<Stream> {
+    const [stream] = await db
+      .update(streams)
+      .set({ videoPath })
       .where(eq(streams.id, id))
       .returning();
     return stream;
